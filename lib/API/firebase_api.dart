@@ -13,20 +13,21 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
   print('Title ${message.notification?.title}');
   print('Body: ${message.notification?.body}');
   print('Payload: ${message.data}');
-
 }
+
 class FirebaseApi {
   //creating firebase_messaging instance
   final firebaseMessaging = FirebaseMessaging.instance;
+
   //creating instance for local notifications plugin
   final _localNotifications = FlutterLocalNotificationsPlugin();
   final androidChannel = const AndroidNotificationChannel(
       'high_importance_channel', 'high_importance_notifications',
       description: 'this channel is used for important notifications',
-      importance: Importance.high);
-
+      importance: Importance.max);
 
   Future<void> initNotifications() async {
+    //ask for permission for notifications upon app installation
     await firebaseMessaging.requestPermission(
       alert: true,
       announcement: true,
@@ -35,12 +36,13 @@ class FirebaseApi {
       provisional: true,
       sound: true,
     );
-    final token = await firebaseMessaging.getToken();
+    final token = await firebaseMessaging.getToken(); //generating token
     print('Token $token');
-    initPushNotifications();
-    initLocalNotifications();
+    initPushNotifications(); //calling push notification method
+    initLocalNotifications(); //calling local notifications method
   }
 
+//handler for notification actions
   void handleMessage(RemoteMessage? message) {
     if (message == null) return;
     if (message.data['type'] == 'notificationscreen') {
@@ -51,15 +53,14 @@ class FirebaseApi {
     }
   }
 
-////for handling push notifications
+////for handling push notifications(notifications from firebase)
   void initPushNotifications() async {
-    //for apple
+    //for apple only
     await FirebaseMessaging.instance
         .setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
-
     );
 
     //when the app is opened from terminated state
@@ -67,7 +68,7 @@ class FirebaseApi {
     //when app is opened from background position
     FirebaseMessaging.onMessageOpenedApp.listen(handleMessage);
     //setting handler for when app is opened when in background
-     FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+    FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
     /////////////////////For handling notifications in foreground "flutter_local_notifications plugin is required"
 //to implement local notifications, we need to define channel and details for notifications and initialize them
     //this method is called whenever the app receives a notification
@@ -81,9 +82,12 @@ class FirebaseApi {
           notification.body,
           NotificationDetails(
               android: AndroidNotificationDetails(
-                  androidChannel.id, androidChannel.name,
-                  channelDescription: androidChannel.description,
-                  icon: '@drawable/ic_launcher')),
+                  androidChannel.id.toString(), androidChannel.name.toString(),
+                  channelDescription: androidChannel.description.toString(),
+                  icon: '@drawable/ic_launcher',
+                  importance: Importance.high,
+                  priority: Priority.high,
+                  ticker: 'ticker')),
           payload: jsonEncode(message.toMap()));
     });
 
@@ -99,8 +103,7 @@ class FirebaseApi {
         onDidReceiveNotificationResponse: (payload) {
       final message = RemoteMessage.fromMap(jsonDecode(payload.payload!));
       print('converted ${message.data}');
-        handleMessage(message);
-
+      handleMessage(message);
     });
     final platform = _localNotifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
