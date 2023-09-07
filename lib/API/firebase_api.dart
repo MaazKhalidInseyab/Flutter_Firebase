@@ -71,6 +71,7 @@ class FirebaseApi {
     FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
     /////////////////////For handling notifications in foreground "flutter_local_notifications plugin is required"
 //to implement local notifications, we need to define channel and details for notifications and initialize them
+
     //this method is called whenever the app receives a notification
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
@@ -90,7 +91,6 @@ class FirebaseApi {
                   ticker: 'ticker')),
           payload: jsonEncode(message.toMap()));
     });
-
   }
 
 ////for handling local notifications
@@ -98,9 +98,11 @@ class FirebaseApi {
     print("running");
     const iOS = DarwinInitializationSettings();
     const android = AndroidInitializationSettings('@drawable/ic_launcher');
+    //common instance for android and IOS
     const settings = InitializationSettings(android: android, iOS: iOS);
     await _localNotifications.initialize(settings,
         onDidReceiveNotificationResponse: (payload) {
+      //upon tapping a notification execute the code placed here
       final message = RemoteMessage.fromMap(jsonDecode(payload.payload!));
       print('converted ${message.data}');
       handleMessage(message);
